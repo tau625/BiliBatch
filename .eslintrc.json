@@ -1,0 +1,51 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "webextensions": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "globals": {
+    "chrome": "readonly",
+    "browser": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+    "no-undef": "error",
+    "no-redeclare": "warn",
+    "eqeqeq": ["warn", "smart"],
+    "no-constant-condition": "warn",
+    "no-empty": ["warn", { "allowEmptyCatch": true }],
+    "no-debugger": "warn",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-unreachable": "warn",
+    "valid-typeof": "error",
+    "curly": ["warn", "multi-line"],
+    "no-var": "warn",
+    "prefer-const": ["warn", { "destructuring": "all" }]
+  },
+  "overrides": [
+    {
+      "files": ["extension/ai/**/*.js", "extension/sidepanel.js"],
+      "parserOptions": {
+        "sourceType": "module"
+      }
+    },
+    {
+      "files": ["extension/content-shared.js", "extension/content-core.js", "extension/content-ui.js", "extension/content-reader.js"],
+      "parserOptions": {
+        "sourceType": "script"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "release/",
+    "node_modules/",
+    "*.min.js",
+    "scripts/"
+  ]
+}

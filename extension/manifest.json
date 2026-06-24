@@ -1,0 +1,68 @@
+{
+  "manifest_version": 3,
+  "name": "BiliBatch｜B站字幕批量导入",
+  "version": "1.2.0",
+  "description": "B站字幕批量导入工具，支持多集视频一键导入到 Obsidian。",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "bilibatch@github.com",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+
+  "permissions": ["storage", "scripting", "tabs"],
+  "host_permissions": [
+    "https://www.bilibili.com/*",
+    "https://api.bilibili.com/*",
+    "https://*.hdslb.com/*",
+    "http://127.0.0.1/*",
+    "https://127.0.0.1/*",
+    "http://localhost/*",
+    "https://localhost/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.bilibili.com/video/*",
+        "https://www.bilibili.com/list/watchlater",
+        "https://www.bilibili.com/list/watchlater/*"
+      ],
+      "js": ["content-shared.js", "content-ui.js", "content-core.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "BiliBatch",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["batch.html", "batch.js", "batch.css"],
+      "matches": ["<all_urls>"]
+    },
+    {
+      "resources": ["content-reader.js"],
+      "matches": ["https://www.bilibili.com/*"]
+    }
+  ]
+}

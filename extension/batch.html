@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>批量导入 - BiliBatch</title>
+    <link rel="stylesheet" href="./batch.css" />
+  </head>
+  <body>
+    <main class="batch">
+      <header class="top">
+        <h1>B站字幕 · 批量导入</h1>
+        <button id="backBtn" type="button" class="ghost">← 返回</button>
+      </header>
+
+      <section class="input-section">
+        <label class="label" for="bvidInput">输入 BV 号（每行一个，或逗号/空格分隔）</label>
+        <textarea id="bvidInput" rows="8" placeholder="BV1xx411c7mD&#10;BV1xW4y1Z7Gr&#10;BV1Sv411r7vd&#10;&#10;也可以粘贴 B 站视频链接，自动提取 BV 号"></textarea>
+
+        <div class="input-actions">
+          <button id="parseBtn" type="button" class="primary">解析 BV 号</button>
+          <button id="clearBtn" type="button">清空</button>
+        </div>
+
+        <div id="parsedList" class="parsed-list" style="display:none">
+          <div class="parsed-header">
+            <span id="parsedCount">0</span> 个视频 <span id="parsedEpisodeCount" style="display:none"></span> 待处理
+            <button id="editListBtn" type="button" class="ghost small">编辑列表</button>
+          </div>
+          <div id="parsedItems" class="parsed-items"></div>
+        </div>
+      </section>
+
+      <section class="options-section">
+        <label class="label">保存位置</label>
+        <input id="folderInput" type="text" value="Clippings/Bilibili" class="text-input" />
+
+        <label class="label">文件名格式</label>
+        <div class="radio-group">
+          <label><input type="radio" name="nameFormat" value="date-title" checked /> 日期-标题</label>
+          <label><input type="radio" name="nameFormat" value="bvid" /> BV号</label>
+          <label><input type="radio" name="nameFormat" value="order" /> 序号-标题</label>
+        </div>
+
+        <label class="label">请求间隔（毫秒）</label>
+        <input id="delayInput" type="number" value="800" min="300" max="5000" class="text-input small" />
+      </section>
+
+      <div class="actions">
+        <button id="startBtn" type="button" class="send" disabled>开始批量导入</button>
+        <button id="cancelBtn" type="button" class="danger" style="display:none">取消</button>
+      </div>
+
+      <section id="progressSection" class="progress-section" style="display:none">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width:0%"></div>
+        </div>
+        <div id="progressText" class="progress-text">准备中...</div>
+        <div id="logContainer" class="log-container"></div>
+      </section>
+
+      <section id="summarySection" class="summary-section" style="display:none">
+        <h2>导入完成</h2>
+        <div id="summaryContent" class="summary-content"></div>
+      </section>
+    </main>
+
+    <script src="./batch.js"></script>
+  </body>
+</html>
