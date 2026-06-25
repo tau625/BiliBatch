@@ -18,7 +18,7 @@ B 站视频字幕批量导入工具，支持多集视频一键导入到 Obsidian
 
 #### Chrome / Edge
 
-1. 下载 `bilibatch-v1.2.0-chrome.zip`
+1. 下载 `bilibatch-v1.3.3-chrome.zip`
 2. 解压到任意文件夹
 3. 打开 Chrome，地址栏输入 `chrome://extensions/`
 4. 右上角开启 **开发者模式**
@@ -28,7 +28,7 @@ B 站视频字幕批量导入工具，支持多集视频一键导入到 Obsidian
 
 #### Firefox
 
-1. 下载 `bilibatch-v1.2.0-firefox.zip`
+1. 下载 `bilibatch-v1.3.3-firefox.zip`
 2. 解压到任意文件夹
 3. 打开 Firefox，地址栏输入 `about:debugging#/runtime/this-firefox`
 4. 点击 **临时载入附加组件**
