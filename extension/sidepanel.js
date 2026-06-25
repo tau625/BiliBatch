@@ -203,7 +203,7 @@ async function loadProvidersAndPrefs({ preferredProviderId = "" } = {}) {
 
 function renderModelSelect(preferredProviderId = "") {
   if (!providers.length) {
-    setSafeHTML(els.modelSelect, '<option value="">未配置平台</option>';
+    setSafeHTML(els.modelSelect, '<option value="">未配置平台</option>');
     els.modelSelect.disabled = true;
     els.modelSelect.style.width = "96px";
     return;
@@ -508,7 +508,7 @@ function renderPresetPrompts() {
   }
   const prompts = Array.isArray(aiPrefs.aiPresetPrompts) ? aiPrefs.aiPresetPrompts : [];
   if (!prompts.length) {
-    setSafeHTML(els.presetList, '<span class="sp-preset-empty">还没有预设提示词</span>';
+    setSafeHTML(els.presetList, '<span class="sp-preset-empty">还没有预设提示词</span>');
     return;
   }
   setSafeHTML(els.presetList, prompts
@@ -542,7 +542,7 @@ function renderHistoryList() {
     els.historyClearBtn.hidden = savedConversations.length === 0;
   }
   if (!savedConversations.length) {
-    setSafeHTML(els.historyList, '<span class="sp-history-empty">还没有历史对话</span>';
+    setSafeHTML(els.historyList, '<span class="sp-history-empty">还没有历史对话</span>');
     return;
   }
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BiliBatch｜B站字幕批量导入",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "B站字幕批量导入工具，支持多集视频一键导入到 Obsidian。",
 
   "browser_specific_settings": {
