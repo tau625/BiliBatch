@@ -103,9 +103,14 @@ function isWatchlaterPage(url = location.href) {
 }
 
 function init() {
-  logInfo(`[BiliBatch] content script loaded, version=${BB_VERSION}`);
+  console.info(`[BiliBatch] content script init, version=${BB_VERSION}`, location.href);
   ensureUiReady({ forceRecreate: true });
-  installReaderDebugHelpers();
+
+  // installReaderDebugHelpers / hydrateReaderStateFromSettings / applyReadingViewPresentation
+  // live in content-reader.js which is lazy-loaded. Guard all reader-only calls.
+  if (typeof installReaderDebugHelpers === "function") {
+    installReaderDebugHelpers();
+  }
 
   const shouldEnterReaderMode = isReaderMode();
   if (shouldEnterReaderMode) {
@@ -117,11 +122,17 @@ function init() {
   startUrlWatcher();
   getSettings().then((settings) => {
     state.settings = settings;
-    hydrateReaderStateFromSettings(settings);
-    applyReadingViewPresentation();
+    if (typeof hydrateReaderStateFromSettings === "function") {
+      hydrateReaderStateFromSettings(settings);
+    }
+    if (typeof applyReadingViewPresentation === "function") {
+      applyReadingViewPresentation();
+    }
     if (shouldEnterReaderMode) {
       enterReaderModeWrapper().catch((error) => {
-        renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
+        if (typeof renderReadingStatus === "function") {
+          renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
+        }
       });
     }
   });
@@ -132,6 +143,7 @@ function bindRuntimeEvents() {
     return;
   }
   state.runtimeEventsBound = true;
+  console.info("[BiliBatch] message listener registered");
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (!message || typeof message !== "object") {
@@ -274,7 +286,7 @@ function bindRuntimeEvents() {
 
     if (message.type === "sidepanel-seek-video-time") {
       const seconds = Number(message.seconds);
-      const video = getRuntimeVideoElement();
+      const video = typeof getRuntimeVideoElement === "function" ? getRuntimeVideoElement() : document.querySelector("video");
       if (!video) {
         sendResponse({ ok: false, error: "当前页面没有找到可联动的视频播放器。" });
         return false;
@@ -288,8 +300,8 @@ function bindRuntimeEvents() {
       if (state.readingViewOpen) {
         state.readingManualScrollPauseUntil = 0;
         state.readingNextScrollBehavior = "auto";
-        updateReaderFollowState();
-        syncReadingViewPlayback(true);
+        if (typeof updateReaderFollowState === "function") updateReaderFollowState();
+        if (typeof syncReadingViewPlayback === "function") syncReadingViewPlayback(true);
       }
       sendResponse({ ok: true, currentTime: nextTime });
       return false;
@@ -320,24 +332,25 @@ function startUrlWatcher() {
     if (!state.readingViewOpen && shouldEnterReaderMode) {
       document.documentElement.setAttribute("data-boc-reader-mode", "1");
       document.body.setAttribute("data-boc-reader-mode", "1");
-      renderReadingStatus("检测到阅读视图跳转，正在打开阅读模式...");
+      if (typeof renderReadingStatus === "function") renderReadingStatus("检测到阅读视图跳转，正在打开阅读模式...");
       enterReaderModeWrapper().catch((error) => {
-        renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
+        if (typeof renderReadingStatus === "function") renderReadingStatus(`阅读视图启动失败：${getErrorMessage(error)}`);
       });
       return;
     }
     if (state.readingViewOpen || shouldEnterReaderMode) {
-      renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
-      waitForVideoMetadata().then(() => {
+      if (typeof renderReadingStatus === "function") renderReadingStatus("检测到视频变化，正在自动刷新字幕...");
+      const waitForMeta = typeof waitForVideoMetadata === "function" ? waitForVideoMetadata() : Promise.resolve();
+      waitForMeta.then(() => {
         refreshClip().catch((error) => {
-          if (!isStaleRunError(error)) {
+          if (!isStaleRunError(error) && typeof renderReadingStatus === "function") {
             renderReadingStatus(`自动刷新失败：${getErrorMessage(error)}`);
           }
         });
       });
       return;
     }
-    setStatus("检测到页面变化，请点击“刷新抓取”加载当前视频字幕。");
+    setStatus("检测到页面变化，请点击「刷新抓取」加载当前视频字幕。");
   }, 1200);
 }
 
@@ -366,11 +379,11 @@ function resetClipState() {
   state.srt = "";
   state.txt = "";
   state.currentClipSignature = computeCurrentClipSignature();
-  stopReadingViewSync();
+  if (typeof stopReadingViewSync === "function") stopReadingViewSync();
   state.readingActiveSubtitleIndex = -1;
   state.readingActiveChapterIndex = -1;
   state.readingVideoEl = null;
-  stopReaderPlayerObserver();
+  if (typeof stopReaderPlayerObserver === "function") stopReaderPlayerObserver();
 
   renderMeta();
   renderSubtitleSelect();
@@ -378,8 +391,8 @@ function resetClipState() {
   if (previewEl) previewEl.value = "";
   setMessage("");
   if (state.readingViewOpen) {
-    renderReadingView();
-    renderReadingStatus("请先点击“刷新抓取”加载当前视频字幕。");
+    if (typeof renderReadingView === "function") renderReadingView();
+    if (typeof renderReadingStatus === "function") renderReadingStatus("请先点击「刷新抓取」加载当前视频字幕。");
   }
 }
 
@@ -390,7 +403,7 @@ async function refreshClip() {
     setMessage("");
     setStatus("正在抓取视频信息...");
     state.subtitleFetchState = "loading";
-    if (state.readingViewOpen) {
+    if (state.readingViewOpen && typeof renderReadingView === "function") {
       renderReadingView();
     }
     state.settings = await getSettings();
@@ -495,18 +508,18 @@ async function refreshClip() {
       renderMeta();
       renderSubtitleSelect();
       if (state.readingViewOpen) {
-        moveReadingMainInline();
-        renderReadingView();
-        renderReadingStatus("当前视频无字幕。");
-        startReadingViewSync();
-        startReaderPlayerObserver();
-        syncReadingViewPlayback(true);
+        if (typeof moveReadingMainInline === "function") moveReadingMainInline();
+        if (typeof renderReadingView === "function") renderReadingView();
+        if (typeof renderReadingStatus === "function") renderReadingStatus("当前视频无字幕。");
+        if (typeof startReadingViewSync === "function") startReadingViewSync();
+        if (typeof startReaderPlayerObserver === "function") startReaderPlayerObserver();
+        if (typeof syncReadingViewPlayback === "function") syncReadingViewPlayback(true);
       }
       setStatus("当前视频无字幕。");
       return;
     }
 
-    // 显式点击“刷新抓取”时默认走网络，避免命中历史缓存导致字幕错位。
+    // 显式点击「刷新抓取」时默认走网络，避免命中历史缓存导致字幕错位。
     const forceRefresh = true;
 
     const preferred = pickPreferredSubtitle(state.subtitles, {
@@ -520,12 +533,12 @@ async function refreshClip() {
       renderMeta();
       renderSubtitleSelect();
       if (state.readingViewOpen) {
-        moveReadingMainInline();
-        renderReadingView();
-        renderReadingStatus("当前视频无字幕。");
-        startReadingViewSync();
-        startReaderPlayerObserver();
-        syncReadingViewPlayback(true);
+        if (typeof moveReadingMainInline === "function") moveReadingMainInline();
+        if (typeof renderReadingView === "function") renderReadingView();
+        if (typeof renderReadingStatus === "function") renderReadingStatus("当前视频无字幕。");
+        if (typeof startReadingViewSync === "function") startReadingViewSync();
+        if (typeof startReaderPlayerObserver === "function") startReaderPlayerObserver();
+        if (typeof syncReadingViewPlayback === "function") syncReadingViewPlayback(true);
       }
       setStatus("当前视频无字幕。");
       return;
@@ -574,12 +587,12 @@ async function refreshClip() {
     renderMeta();
     renderSubtitleSelect();
     if (state.readingViewOpen) {
-      moveReadingMainInline();
-      renderReadingView();
-      renderReadingStatus("抓取完成，阅读视图已同步最新字幕。");
-      startReadingViewSync();
-      startReaderPlayerObserver();
-      syncReadingViewPlayback(true);
+      if (typeof moveReadingMainInline === "function") moveReadingMainInline();
+      if (typeof renderReadingView === "function") renderReadingView();
+      if (typeof renderReadingStatus === "function") renderReadingStatus("抓取完成，阅读视图已同步最新字幕。");
+      if (typeof startReadingViewSync === "function") startReadingViewSync();
+      if (typeof startReaderPlayerObserver === "function") startReaderPlayerObserver();
+      if (typeof syncReadingViewPlayback === "function") syncReadingViewPlayback(true);
     }
     setStatus("抓取完成，可以复制、下载或发送到 Obsidian。");
   } catch (error) {
@@ -589,7 +602,7 @@ async function refreshClip() {
     state.subtitleFetchState = "error";
     resetClipState();
     state.subtitleFetchState = "error";
-    if (state.readingViewOpen) {
+    if (state.readingViewOpen && typeof renderReadingView === "function") {
       renderReadingView();
     }
     if (error?.code === "SUBTITLE_DURATION_MISMATCH") {
@@ -667,8 +680,8 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
         const cachedPreview = byId(ids.preview);
         if (cachedPreview) cachedPreview.value = buildSubtitlePreview(cachedBody, state.settings);
         if (state.readingViewOpen) {
-          renderReadingView();
-          syncReadingViewPlayback(true);
+          if (typeof renderReadingView === "function") renderReadingView();
+          if (typeof syncReadingViewPlayback === "function") syncReadingViewPlayback(true);
         }
         return;
       }
@@ -704,8 +717,8 @@ async function loadSubtitle(url, lang, runId = state.fetchRunId, subtitleId = ""
   const loadPreview = byId(ids.preview);
   if (loadPreview) loadPreview.value = buildSubtitlePreview(body, state.settings);
   if (state.readingViewOpen) {
-    renderReadingView();
-    syncReadingViewPlayback(true);
+    if (typeof renderReadingView === "function") renderReadingView();
+    if (typeof syncReadingViewPlayback === "function") syncReadingViewPlayback(true);
   }
 }
 
@@ -786,18 +799,18 @@ function renderMeta() {
   const meta = byId(ids.meta);
   if (!meta) return;
   if (!state.bvid) {
-    meta.innerHTML = '<div class="boc-meta-item">尚未抓取视频信息</div>';
+    setSafeHTML(meta, '<div class="boc-meta-item">尚未抓取视频信息</div>');
     return;
   }
 
   const subtitleCount = state.subtitles.length;
-  meta.innerHTML = `
+  setSafeHTML(meta, `
     <div class="boc-meta-item"><strong>标题：</strong>${escapeHtml(state.title)}</div>
     <div class="boc-meta-item"><strong>URL：</strong>${escapeHtml(cleanVideoUrl())}</div>
     <div class="boc-meta-item"><strong>作者：</strong>${escapeHtml(state.author || "未知")}</div>
     <div class="boc-meta-item"><strong>日期：</strong>${escapeHtml(state.uploadDate || "未知")}</div>
     <div class="boc-meta-item"><strong>字幕轨：</strong>${subtitleCount}</div>
-  `;
+  `);
 }
 
 function renderSubtitleSelect() {
@@ -806,12 +819,12 @@ function renderSubtitleSelect() {
   const subtitles = state.subtitles || [];
 
   if (subtitles.length === 0) {
-    select.innerHTML = '<option value="">暂无字幕</option>';
+    setSafeHTML(select, '<option value="">暂无字幕</option>');
     select.disabled = true;
     return;
   }
 
-  select.innerHTML = subtitles
+  setSafeHTML(select, subtitles
     .map((item) => {
       const selectedById =
         state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId);
@@ -827,7 +840,7 @@ function renderSubtitleSelect() {
         optionLabel
       )}</option>`;
     })
-    .join("");
+    .join(""));
   select.disabled = false;
 }
 
@@ -1739,7 +1752,7 @@ function validateSubtitleByDuration(body, videoDuration) {
 }
 
 function readRuntimeVideoDuration() {
-  const video = getRuntimeVideoElement();
+  const video = typeof getRuntimeVideoElement === "function" ? getRuntimeVideoElement() : document.querySelector("video");
   const duration = Number(video?.duration);
   if (Number.isFinite(duration) && duration > 0) {
     return duration;
@@ -1799,3 +1812,5 @@ function normalizeSubtitleUrl(url) {
 
   return `https://${url.replace(/^\/+/, "")}`;
 }
+
+init();

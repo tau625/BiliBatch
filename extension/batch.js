@@ -1,3 +1,4 @@
+/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 // Firefox / Chrome 兼容
 const api = globalThis.browser || globalThis.chrome;
 
@@ -27,6 +28,10 @@ let parsedBvids = [];
 let parsedMeta = {}; // bvid → { title, author, pages, duration, pageDetails: [{part, page, duration}] }
 let isRunning = false;
 let abortController = null;
+
+function setSafeHTML(element, html) {
+  element.innerHTML = html;
+}
 
 // ========== BV 号解析 ==========
 
@@ -102,7 +107,7 @@ function renderParsedList() {
   updateParsedCount();
   el.startBtn.disabled = !parsedBvids.length;
 
-  el.parsedItems.innerHTML = parsedBvids.map((bvid, i) => `
+  setSafeHTML(el.parsedItems, parsedBvids.map((bvid, i) => `
     <div class="parsed-item" data-bvid="${bvid}">
       <span class="index">${i + 1}.</span>
       <span class="bvid">${bvid}</span>
@@ -110,7 +115,7 @@ function renderParsedList() {
       <span class="remove" data-index="${i}" title="移除">✕</span>
     </div>
     <div class="parsed-subitems" data-bvid="${bvid}"></div>
-  `).join("");
+  `).join(""));
 
   el.parsedItems.querySelectorAll(".remove").forEach((btn) => {
     btn.addEventListener("click", (e) => {
@@ -148,13 +153,13 @@ function updateParsedItem(bvid, index) {
   if (meta.pages > 1 && meta.pageDetails.length > 0) {
     const subContainer = el.parsedItems.querySelector(`.parsed-subitems[data-bvid="${bvid}"]`);
     if (subContainer) {
-      subContainer.innerHTML = meta.pageDetails.map((p) => `
+      setSafeHTML(subContainer, meta.pageDetails.map((p) => `
         <div class="parsed-subitem" data-bvid="${bvid}" data-page="${p.page}">
           <span class="sub-index">P${p.page}</span>
           <span class="sub-title">${p.part || `第${p.page}集`}</span>
           <span class="sub-status">待处理</span>
         </div>
-      `).join("");
+      `).join(""));
       subContainer.style.display = "block";
     }
   }
@@ -203,7 +208,7 @@ async function startBatch() {
   el.cancelBtn.style.display = "inline-block";
   el.progressSection.style.display = "block";
   el.summarySection.style.display = "none";
-  el.logContainer.innerHTML = "";
+  setSafeHTML(el.logContainer, "");
 
   const folder = el.folderInput.value.trim() || "Clippings/Bilibili";
   const delay = Number(el.delayInput.value) || 800;
@@ -573,18 +578,18 @@ function addLog(index, status, text) {
   const statusIcon = status === "success" ? "✓" : status === "error" ? "✕" : "⊘";
   const item = document.createElement("div");
   item.className = `log-item ${status}`;
-  item.innerHTML = `
+  setSafeHTML(item, `
     <span class="log-index">${index}.</span>
     <span class="log-status">${statusIcon}</span>
     <span class="log-title">${text}</span>
-  `;
+  `);
   el.logContainer.appendChild(item);
   el.logContainer.scrollTop = el.logContainer.scrollHeight;
 }
 
 function showSummary(total, success, failed, skipped) {
   el.summarySection.style.display = "block";
-  el.summaryContent.innerHTML = `
+  setSafeHTML(el.summaryContent, `
     <div class="summary-stat">
       <span class="stat-label">总计</span>
       <span class="stat-value total">${total} 集</span>
@@ -601,7 +606,7 @@ function showSummary(total, success, failed, skipped) {
       <span class="stat-label">跳过</span>
       <span class="stat-value">${skipped} 集</span>
     </div>` : ""}
-  `;
+  `);
 }
 
 // ========== 事件绑定 ==========

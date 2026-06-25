@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BiliBatch｜B站字幕批量导入",
-  "version": "1.2.0",
+  "version": "1.3.1",
   "description": "B站字幕批量导入工具，支持多集视频一键导入到 Obsidian。",
 
   "browser_specific_settings": {
@@ -25,7 +25,6 @@
     "https://localhost/*"
   ],
   "background": {
-    "service_worker": "background.js",
     "scripts": ["background.js"]
   },
   "icons": {
@@ -38,11 +37,9 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.bilibili.com/video/*",
-        "https://www.bilibili.com/list/watchlater",
-        "https://www.bilibili.com/list/watchlater/*"
+        "https://www.bilibili.com/*"
       ],
-      "js": ["content-shared.js", "content-ui.js", "content-core.js"],
+      "js": ["lib/markdown.js", "content-shared.js", "content-ui.js", "content-core.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }
@@ -54,6 +51,16 @@
       "32": "icons/icon32.png"
     },
     "default_popup": "popup.html"
+  },
+  "sidebar_action": {
+    "default_title": "BiliBatch AI 助手",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    },
+    "default_panel": "sidepanel.html",
+    "open_at_install": false
   },
   "web_accessible_resources": [
     {

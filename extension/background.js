@@ -117,15 +117,18 @@ async function injectReaderContent(tabId) {
     files: ["content.css"]
   });
 
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ["content.js"]
-    });
-  } catch (error) {
-    const message = String(error?.message || "");
-    if (!message.includes("Identifier 'DEFAULT_SETTINGS' has already been declared")) {
-      throw error;
+  const contentScripts = ["lib/markdown.js", "content-shared.js", "content-ui.js", "content-core.js"];
+  for (const file of contentScripts) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: [file]
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (!message.includes("Identifier 'DEFAULT_SETTINGS' has already been declared")) {
+        throw error;
+      }
     }
   }
 }

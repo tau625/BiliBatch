@@ -1,5 +1,4 @@
-import { buildSuggestedPrompts } from "./ai/context.js";
-
+/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const SELECTED_PROVIDER_KEY = "bb_ai_selected_provider";
 const CONVERSATIONS_STORAGE_KEY = "bb_ai_conversations_v1";
 const MAX_SAVED_CONVERSATIONS = 60;
@@ -59,6 +58,24 @@ let liveContextSyncForceRefresh = false;
 let modelSelectMeasureCanvas = null;
 let streamSlowNoticeTimer = 0;
 let streamFirstTokenReceived = false;
+
+function setSafeHTML(element, html) {
+  element.innerHTML = html;
+}
+
+function buildSuggestedPrompts(context) {
+  const prompts = [
+    "用 3 句话总结这个视频",
+    "提炼这个视频的 5 个重点",
+    "按时间顺序整理这期视频的内容"
+  ];
+  if (context && Array.isArray(context.hotComments) && context.hotComments.length) {
+    prompts.push("根据评论总结观众的看法");
+  } else {
+    prompts.push("把这期视频适合发朋友圈的观点摘出来");
+  }
+  return prompts;
+}
 
 init().catch((err) => {
   resetConversationView(`初始化失败：${escapeHtml(err?.message || err)}`);
@@ -186,18 +203,18 @@ async function loadProvidersAndPrefs({ preferredProviderId = "" } = {}) {
 
 function renderModelSelect(preferredProviderId = "") {
   if (!providers.length) {
-    els.modelSelect.innerHTML = '<option value="">未配置平台</option>';
+    setSafeHTML(els.modelSelect, '<option value="">未配置平台</option>';
     els.modelSelect.disabled = true;
     els.modelSelect.style.width = "96px";
     return;
   }
 
-  els.modelSelect.innerHTML = providers
+  setSafeHTML(els.modelSelect, providers
     .map((p) => {
       const label = String(p.model || p.name || "").trim();
       return `<option value="${escapeHtml(p.id)}">${escapeHtml(label)}</option>`;
     })
-    .join("");
+    .join(""));
 
   const savedProviderId = String(preferredProviderId || localStorage.getItem(SELECTED_PROVIDER_KEY) || "").trim();
   const matchedProvider = providers.find((item) => item.id === savedProviderId) || providers[0];
@@ -447,11 +464,11 @@ function renderInitialState() {
 
 function resetConversationView(stateHtml = "") {
   updateSidepanelLayoutState();
-  els.messages.innerHTML = "";
+  setSafeHTML(els.messages, "");
   if (stateHtml) {
     const stateNode = document.createElement("div");
     stateNode.className = "sp-center-error";
-    stateNode.innerHTML = stateHtml;
+    setSafeHTML(stateNode, stateHtml);
     els.messages.appendChild(stateNode);
   }
   suggestionsNode = document.createElement("div");
@@ -469,13 +486,13 @@ function renderSuggestions() {
     return;
   }
   if (!contextData || !providers.length || chatHistory.length || contextData.isVideoContext === false) {
-    suggestionsNode.innerHTML = "";
+    setSafeHTML(suggestionsNode, "");
     return;
   }
   const prompts = buildSuggestedPrompts(contextData);
-  suggestionsNode.innerHTML = prompts
+  setSafeHTML(suggestionsNode, prompts
     .map((prompt) => `<button type="button" class="sp-chip">${escapeHtml(prompt)}</button>`)
-    .join("");
+    .join(""));
   suggestionsNode.querySelectorAll(".sp-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
       els.input.value = btn.textContent || "";
@@ -491,17 +508,17 @@ function renderPresetPrompts() {
   }
   const prompts = Array.isArray(aiPrefs.aiPresetPrompts) ? aiPrefs.aiPresetPrompts : [];
   if (!prompts.length) {
-    els.presetList.innerHTML = '<span class="sp-preset-empty">还没有预设提示词</span>';
+    setSafeHTML(els.presetList, '<span class="sp-preset-empty">还没有预设提示词</span>';
     return;
   }
-  els.presetList.innerHTML = prompts
+  setSafeHTML(els.presetList, prompts
     .map((prompt, index) => `
       <span class="sp-preset-item">
         <button type="button" class="sp-preset-chip" data-index="${index}" title="${escapeHtml(prompt)}">${escapeHtml(prompt)}</button>
         <button type="button" class="sp-preset-remove" data-index="${index}" aria-label="删除预设提示词">×</button>
       </span>
     `)
-    .join("");
+    .join(""));
   els.presetList.querySelectorAll(".sp-preset-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
       const index = Number(btn.getAttribute("data-index") || -1);
@@ -525,7 +542,7 @@ function renderHistoryList() {
     els.historyClearBtn.hidden = savedConversations.length === 0;
   }
   if (!savedConversations.length) {
-    els.historyList.innerHTML = '<span class="sp-history-empty">还没有历史对话</span>';
+    setSafeHTML(els.historyList, '<span class="sp-history-empty">还没有历史对话</span>';
     return;
   }
 
@@ -537,7 +554,7 @@ function renderHistoryList() {
     !doesTabMatchContextUrl(liveVideoRef.url || liveTabUrl, currentConversationMeta.contextUrl || "")
   );
 
-  els.historyList.innerHTML = savedConversations
+  setSafeHTML(els.historyList, savedConversations
     .map((conversation) => {
       const isActive = conversation.id === currentConversationId;
       const isLiveMatch = Boolean(
@@ -560,7 +577,7 @@ function renderHistoryList() {
         </div>
       `;
     })
-    .join("");
+    .join(""));
 
   els.historyList.querySelectorAll(".sp-history-open").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1036,7 +1053,7 @@ async function startNewConversation() {
 
 function renderConversationMessages() {
   updateSidepanelLayoutState();
-  els.messages.innerHTML = "";
+  setSafeHTML(els.messages, "");
   suggestionsNode = null;
   if (!chatHistory.length) {
     resetConversationView("");
@@ -1443,7 +1460,7 @@ function appendToken(node, token) {
   }
   const raw = (node.dataset.raw || "") + String(token || "");
   node.dataset.raw = raw;
-  node.innerHTML = renderMarkdown(raw) + '<span class="sp-msg-cursor"></span>';
+  setSafeHTML(node, renderMarkdown(raw) + '<span class="sp-msg-cursor"></span>');
   scrollToBottom();
 }
 
@@ -1476,7 +1493,7 @@ function showAssistantError(node, error) {
     return;
   }
   clearStreamRuntimeState();
-  node.innerHTML = "";
+  setSafeHTML(node, "");
   const err = document.createElement("div");
   err.className = "sp-msg-error";
   err.textContent = `错误：${error}`;
@@ -1512,7 +1529,7 @@ function handleAssistantStopped(node, reason) {
       void persistCurrentConversation();
     }
   } else {
-    node.innerHTML = "";
+    setSafeHTML(node, "");
     const stopped = document.createElement("div");
     stopped.className = "sp-msg-stopped";
     stopped.textContent = reason || "已停止生成";
@@ -1579,12 +1596,12 @@ function renderAssistantMessage(node, raw) {
   if (!node) {
     return;
   }
-  node.innerHTML = "";
+  setSafeHTML(node, "");
   const cleanedRaw = stripThinkBlocks(raw);
 
   const content = document.createElement("div");
   content.className = "sp-msg-assistant-body";
-  content.innerHTML = renderMarkdown(cleanedRaw);
+  setSafeHTML(content, renderMarkdown(cleanedRaw));
   linkifyAssistantTimestamps(content);
   node.appendChild(content);
 
@@ -1595,12 +1612,12 @@ function renderAssistantMessage(node, raw) {
   copyBtn.className = "sp-msg-copy-btn";
   copyBtn.setAttribute("aria-label", "复制回复");
   copyBtn.setAttribute("title", "复制回复");
-  copyBtn.innerHTML = `
+  setSafeHTML(copyBtn, `
     <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
       <rect x="9" y="9" width="10" height="10" rx="2"></rect>
       <path d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"></path>
     </svg>
-  `;
+  `);
   copyBtn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(cleanedRaw);

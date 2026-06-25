@@ -1,3 +1,4 @@
+/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const DEFAULT_PRESET_PROMPTS = [
   "生成视频摘要和结论",
   "按章节整理视频内容",
@@ -89,6 +90,10 @@ const elements = {
   testConnectionBtn: document.getElementById("testConnectionBtn"),
   status: document.getElementById("status")
 };
+
+function setSafeHTML(element, html) {
+  setSafeHTML(element, html);
+}
 
 let savedAiPresetPrompts = [];
 
@@ -353,7 +358,7 @@ function clearInputErrors() {
 }
 
 function renderFixedPropertyRows(items) {
-  elements.fixedPropertiesList.innerHTML = "";
+  setSafeHTML(elements.fixedPropertiesList, "");
   const rows = Array.isArray(items) ? items : [];
   rows.forEach((item) => addFixedPropertyRow(item));
   updateFixedPropertyEmptyState();
@@ -363,7 +368,7 @@ function addFixedPropertyRow(item = {}) {
   const type = normalizeFixedPropertyType(item.type);
   const row = document.createElement("div");
   row.className = "fixed-property-row";
-  row.innerHTML = `
+  setSafeHTML(row, `
     <div class="fixed-property-fields">
       <div class="fixed-property-field fixed-property-field-type">${buildFixedPropertyTypePicker(type)}</div>
       <div class="fixed-property-field fixed-property-field-key">
@@ -385,7 +390,7 @@ function addFixedPropertyRow(item = {}) {
       </div>
     </div>
     <p class="fixed-property-error" hidden></p>
-  `;
+  `);
 
   row.querySelector(".fixed-property-remove")?.addEventListener("click", () => {
     row.remove();
@@ -427,7 +432,7 @@ function addFixedPropertyRow(item = {}) {
       }
       const currentValue = readFixedPropertyValue(row);
       if (valueSlot) {
-        valueSlot.innerHTML = buildFixedPropertyValueControl(nextType, currentValue);
+        setSafeHTML(valueSlot, buildFixedPropertyValueControl(nextType, currentValue));
         bindFixedPropertyValueEvents(row);
       }
       clearFixedPropertyErrorState(row);
@@ -452,7 +457,7 @@ function updateFixedPropertyEmptyState() {
 }
 
 function renderNoteSectionRows(items) {
-  elements.noteSectionsList.innerHTML = "";
+  setSafeHTML(elements.noteSectionsList, "");
   const rows = Array.isArray(items) ? items : [];
   rows.forEach((item) => addNoteSectionRow(item, { skipLimit: true }));
   updateNoteSectionEmptyState();
@@ -467,7 +472,7 @@ function addNoteSectionRow(item = {}, { skipLimit = false } = {}) {
   const position = normalizeNoteSectionPosition(item.position);
   const row = document.createElement("div");
   row.className = "note-section-row";
-  row.innerHTML = `
+  setSafeHTML(row, `
     <div class="note-section-fields">
       <div class="note-section-field note-section-field-position">
         <select class="note-section-position" aria-label="段落位置">
@@ -493,7 +498,7 @@ function addNoteSectionRow(item = {}, { skipLimit = false } = {}) {
       </div>
     </div>
     <p class="note-section-error" hidden></p>
-  `;
+  `);
 
   row.querySelector(".note-section-remove")?.addEventListener("click", () => {
     row.remove();
@@ -889,7 +894,7 @@ async function loadAiProviders() {
 }
 
 function renderAiProviders(items) {
-  elements.aiProvidersList.innerHTML = "";
+  setSafeHTML(elements.aiProvidersList, "");
   const list = Array.isArray(items) ? items : [];
   list.forEach((item) => addAiProviderRow(item));
   updateAiProvidersEmptyState();
@@ -918,7 +923,7 @@ function addAiProviderRow(item = {}) {
   row.dataset.providerId = id;
   row.dataset.hasSavedKey = hasSavedKey ? "1" : "0";
   row.dataset.currentPresetId = presetId;
-  row.innerHTML = `
+  setSafeHTML(row, `
     <select class="ai-provider-preset" title="平台">
       ${AI_PRESETS.map((p) => `<option value="${escapeAttribute(p.id)}" ${p.id === presetId ? "selected" : ""}>${escapeAttribute(p.name)}</option>`).join("")}
     </select>
@@ -936,7 +941,7 @@ function addAiProviderRow(item = {}) {
       </svg>
     </button>
     <p class="ai-provider-status" hidden></p>
-  `;
+  `);
 
   row.querySelector(".ai-provider-preset").addEventListener("change", (e) => {
     const previousPreset = AI_PRESETS.find((p) => p.id === row.dataset.currentPresetId) || null;

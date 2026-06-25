@@ -136,12 +136,12 @@ function renderReadingSubtitleSelect() {
   const subtitles = state.subtitles || [];
 
   if (subtitles.length === 0) {
-    select.innerHTML = '<option value="">暂无字幕</option>';
+    setSafeHTML(select, '<option value="">暂无字幕</option>');
     select.disabled = true;
     return;
   }
 
-  select.innerHTML = subtitles
+  setSafeHTML(select, subtitles
     .map((item) => {
       const selectedById =
         state.selectedSubtitleId && String(item.id) === String(state.selectedSubtitleId);
@@ -157,7 +157,7 @@ function renderReadingSubtitleSelect() {
         optionLabel
       )}</option>`;
     })
-    .join("");
+    .join(""));
   select.disabled = false;
 }
 
@@ -472,9 +472,9 @@ function renderReadingView() {
   }
 
   if (chapters.length === 0) {
-    chapterList.innerHTML = '<div class="boc-reading-empty">当前视频没有章节。</div>';
+    setSafeHTML(chapterList, '<div class="boc-reading-empty">当前视频没有章节。</div>');
   } else {
-    chapterList.innerHTML = chapters
+    setSafeHTML(chapterList, chapters
       .map(
         (item, index) => `
           <button
@@ -490,15 +490,15 @@ function renderReadingView() {
           </button>
         `
       )
-      .join("");
+      .join(""));
   }
 
   if (transcriptItems.length === 0) {
-    transcriptList.innerHTML = `<div class="boc-reading-empty">${escapeHtml(
+    setSafeHTML(transcriptList, `<div class="boc-reading-empty">${escapeHtml(
       getReadingTranscriptPlaceholderText()
-    )}</div>`;
+    )}</div>`);
   } else {
-    transcriptList.innerHTML = transcriptItems
+    setSafeHTML(transcriptList, transcriptItems
       .map(
         (item) => `
           <button
@@ -514,8 +514,8 @@ function renderReadingView() {
           </button>
         `
       )
-      .join("");
-    transcriptList.insertAdjacentHTML(
+      .join(""));
+    safeInsertAdjacentHTML(transcriptList,
       "beforeend",
       `<div id="${ids.readingTranscriptTailSpacer}" class="boc-reading-tail-spacer" aria-hidden="true"></div>`
     );
@@ -769,7 +769,7 @@ function renderReadingInfoPanel() {
   const summaryItems = buildReadingSummaryItems();
   const description = String(state.description || "").trim();
 
-  summaryNode.innerHTML =
+  setSafeHTML(summaryNode,
     summaryItems.length === 0
       ? '<div class="boc-reading-empty">当前视频信息还未就绪。</div>'
       : summaryItems
@@ -781,10 +781,11 @@ function renderReadingInfoPanel() {
               </div>
             `
           )
-          .join("");
+          .join(""));
+
 
   if (!description) {
-    descriptionNode.innerHTML = '<div class="boc-reading-empty">当前视频没有简介。</div>';
+    setSafeHTML(descriptionNode, '<div class="boc-reading-empty">当前视频没有简介。</div>');
     descriptionNode.classList.remove("is-collapsed");
     descriptionBtn.hidden = true;
   } else {

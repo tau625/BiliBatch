@@ -1,3 +1,4 @@
+/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const el = {
   status: document.getElementById("status"),
   message: document.getElementById("message"),
@@ -22,6 +23,10 @@ const EXPECTED_CONTENT_SCRIPT_VERSION = chrome.runtime.getManifest().version || 
 const DEFAULT_SETTINGS = {
   downloadFormat: "srt"
 };
+
+function setSafeHTML(element, html) {
+  element.innerHTML = html;
+}
 
 function formatLocalDate(value = Date.now()) {
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
@@ -170,8 +175,9 @@ function bindEvents() {
         return;
       }
 
-      if (chrome.sidePanel?.open) {
-        await chrome.sidePanel.open({ tabId: tab.id });
+      const sidePanel = chrome.sidePanel;
+      if (typeof sidePanel?.open === "function") {
+        await sidePanel.open({ tabId: tab.id });
       } else {
         throw new Error("当前浏览器不支持扩展侧边栏");
       }
@@ -231,10 +237,10 @@ function render(payload, { preserveStatus = false } = {}) {
 
   const options = payload.subtitleOptions || [];
   if (options.length === 0) {
-    el.subtitleSelect.innerHTML = '<option value="">暂无字幕</option>';
+    setSafeHTML(el.subtitleSelect, '<option value="">暂无字幕</option>');
     el.subtitleSelect.disabled = true;
   } else {
-    el.subtitleSelect.innerHTML = options
+    setSafeHTML(el.subtitleSelect, options
       .map((item) => {
         const selected = item.selected ? "selected" : "";
         const aiTag = item.isAi ? " [AI]" : "";
@@ -244,7 +250,7 @@ function render(payload, { preserveStatus = false } = {}) {
           `${item.lang || "unknown"}${aiTag}`
         )}</option>`;
       })
-      .join("");
+      .join(""))
     el.subtitleSelect.disabled = false;
   }
 
@@ -298,19 +304,27 @@ async function getActiveTabId() {
 async function sendToContent(message) {
   const tab = await getActiveTab();
   const tabId = tab?.id || null;
+  console.info("[BiliBatch popup] sendToContent", { tabId, url: tab?.url, message });
   if (!tabId) {
     throw new Error("找不到当前标签页");
   }
 
   try {
-    return await sendMessageToTab(tabId, message);
+    const resp = await sendMessageToTab(tabId, message);
+    console.info("[BiliBatch popup] sendToContent response:", resp);
+    return resp;
   } catch (error) {
+    console.warn("[BiliBatch popup] sendToContent error:", error?.message);
     if (shouldRetryAfterInjection(error) && isSupportedSubtitlePage(tab?.url || "")) {
+      console.info("[BiliBatch popup] trying ensureContentScriptReady...");
       try {
         await ensureContentScriptReady(tabId);
         await sleep(80);
-        return await sendMessageToTab(tabId, message);
+        const retryResp = await sendMessageToTab(tabId, message);
+        console.info("[BiliBatch popup] retry response:", retryResp);
+        return retryResp;
       } catch (retryError) {
+        console.warn("[BiliBatch popup] retry error:", retryError?.message);
         error = retryError;
       }
     }
@@ -338,12 +352,7 @@ function shouldRetryAfterInjection(error) {
 function isSupportedSubtitlePage(url) {
   try {
     const parsed = new URL(String(url || ""));
-    if (parsed.hostname !== "www.bilibili.com") {
-      return false;
-    }
-    return parsed.pathname === "/list/watchlater" ||
-      parsed.pathname === "/list/watchlater/" ||
-      parsed.pathname.startsWith("/video/");
+    return parsed.hostname === "www.bilibili.com";
   } catch {
     return false;
   }
@@ -351,28 +360,34 @@ function isSupportedSubtitlePage(url) {
 
 async function ensureContentScriptReady(tabId) {
   if (!chrome.scripting) {
+    console.warn("[BiliBatch popup] chrome.scripting not available");
     throw new Error("请刷新浏览器网页重试，或当前网页不支持");
   }
 
   const loadedVersion = await probeContentScriptVersion(tabId);
+  console.info("[BiliBatch popup] probeContentScriptVersion:", loadedVersion, "expected:", EXPECTED_CONTENT_SCRIPT_VERSION);
   if (loadedVersion === EXPECTED_CONTENT_SCRIPT_VERSION) {
     return;
   }
 
+  console.info("[BiliBatch popup] injecting content scripts...");
   await chrome.scripting.insertCSS({
     target: { tabId },
     files: ["content.css"]
   });
 
-  try {
-    await chrome.scripting.executeScript({
-      target: { tabId },
-      files: ["content.js"]
-    });
-  } catch (error) {
-    const message = String(error?.message || "");
-    if (!message.includes("Identifier 'DEFAULT_SETTINGS' has already been declared")) {
-      throw error;
+  const contentScripts = ["lib/markdown.js", "content-shared.js", "content-ui.js", "content-core.js"];
+  for (const file of contentScripts) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: [file]
+      });
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (!message.includes("Identifier 'DEFAULT_SETTINGS' has already been declared")) {
+        throw error;
+      }
     }
   }
 

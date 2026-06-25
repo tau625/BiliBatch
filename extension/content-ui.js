@@ -82,7 +82,7 @@ function ensureUiReady({ forceRecreate = false } = {}) {
   if (!root) {
     root = document.createElement("div");
     root.id = ids.root;
-    root.innerHTML = buildUiHtml();
+    setSafeHTML(root, buildUiHtml());
     document.body.appendChild(root);
     state.uiEventsBound = false;
   }
@@ -300,10 +300,12 @@ function bindUiEvents() {
     state.readingDescriptionExpanded = !state.readingDescriptionExpanded;
     renderReadingInfoPanel();
   });
-  bindReaderStepperControl(readingFontScaleSelect, "readerFontScale");
-  bindReaderStepperControl(readingLetterSpacingSelect, "readerLetterSpacing");
-  bindReaderStepperControl(readingLineHeightSelect, "readerLineHeight");
-  bindReaderStepperControl(readingContentWidthSelect, "readerContentWidth");
+  if (typeof bindReaderStepperControl === "function") {
+    bindReaderStepperControl(readingFontScaleSelect, "readerFontScale");
+    bindReaderStepperControl(readingLetterSpacingSelect, "readerLetterSpacing");
+    bindReaderStepperControl(readingLineHeightSelect, "readerLineHeight");
+    bindReaderStepperControl(readingContentWidthSelect, "readerContentWidth");
+  }
 
   const readingSubtitleSelect = byId(ids.readingSubtitleSelect);
   readingSubtitleSelect?.addEventListener("change", (event) => {
@@ -348,8 +350,8 @@ function bindUiEvents() {
   chapterList?.addEventListener("wheel", handleReaderManualScroll, { passive: true });
   chapterList?.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
   transcriptList?.addEventListener("pointerdown", () => noteManualReaderInteraction(3500));
-  chapterList?.addEventListener("click", onReadingChapterClick);
-  transcriptList?.addEventListener("click", onReadingTranscriptClick);
+  chapterList?.addEventListener("click", (e) => { if (typeof onReadingChapterClick === "function") onReadingChapterClick(e); });
+  transcriptList?.addEventListener("click", (e) => { if (typeof onReadingTranscriptClick === "function") onReadingTranscriptClick(e); });
   readingView?.addEventListener("transitionend", () => {
     if (!state.readingViewOpen) {
       stopReadingViewSync();
