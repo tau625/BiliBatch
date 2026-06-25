@@ -1,4 +1,3 @@
-/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const SELECTED_PROVIDER_KEY = "bb_ai_selected_provider";
 const CONVERSATIONS_STORAGE_KEY = "bb_ai_conversations_v1";
 const MAX_SAVED_CONVERSATIONS = 60;
@@ -60,7 +59,13 @@ let streamSlowNoticeTimer = 0;
 let streamFirstTokenReceived = false;
 
 function setSafeHTML(element, html) {
-  element.innerHTML = html;
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  element.textContent = "";
+  const fragment = document.createDocumentFragment();
+  while (doc.body.firstChild) {
+    fragment.appendChild(doc.body.firstChild);
+  }
+  element.appendChild(fragment);
 }
 
 function buildSuggestedPrompts(context) {

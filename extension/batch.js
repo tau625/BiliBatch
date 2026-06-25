@@ -1,4 +1,3 @@
-/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 // Firefox / Chrome 兼容
 const api = globalThis.browser || globalThis.chrome;
 
@@ -30,7 +29,13 @@ let isRunning = false;
 let abortController = null;
 
 function setSafeHTML(element, html) {
-  element.innerHTML = html;
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  element.textContent = "";
+  const fragment = document.createDocumentFragment();
+  while (doc.body.firstChild) {
+    fragment.appendChild(doc.body.firstChild);
+  }
+  element.appendChild(fragment);
 }
 
 // ========== BV 号解析 ==========

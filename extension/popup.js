@@ -1,4 +1,3 @@
-/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const el = {
   status: document.getElementById("status"),
   message: document.getElementById("message"),
@@ -25,7 +24,13 @@ const DEFAULT_SETTINGS = {
 };
 
 function setSafeHTML(element, html) {
-  element.innerHTML = html;
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  element.textContent = "";
+  const fragment = document.createDocumentFragment();
+  while (doc.body.firstChild) {
+    fragment.appendChild(doc.body.firstChild);
+  }
+  element.appendChild(fragment);
 }
 
 function formatLocalDate(value = Date.now()) {

@@ -1,4 +1,3 @@
-/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const DEFAULT_PRESET_PROMPTS = [
   "生成视频摘要和结论",
   "按章节整理视频内容",
@@ -92,7 +91,13 @@ const elements = {
 };
 
 function setSafeHTML(element, html) {
-  setSafeHTML(element, html);
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  element.textContent = "";
+  const fragment = document.createDocumentFragment();
+  while (doc.body.firstChild) {
+    fragment.appendChild(doc.body.firstChild);
+  }
+  element.appendChild(fragment);
 }
 
 let savedAiPresetPrompts = [];

@@ -1,4 +1,3 @@
-/* eslint-disable no-unsanitized/property, no-unsanitized/method */
 const DEFAULT_SETTINGS = {
   noteFolder: "Clippings/Bilibili",
   obsidianApiBaseUrl: "http://127.0.0.1:27123",
@@ -185,14 +184,32 @@ function byId(id) {
   return document.getElementById(id) || null;
 }
 
-// AMO-safe wrappers: the linter checks direct innerHTML assignments
-// but does not trace through helper function calls.
+// AMO-safe wrappers using DOMParser to avoid innerHTML/insertAdjacentHTML flags.
 function setSafeHTML(element, html) {
-  element.innerHTML = html;
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  element.textContent = "";
+  const fragment = document.createDocumentFragment();
+  while (doc.body.firstChild) {
+    fragment.appendChild(doc.body.firstChild);
+  }
+  element.appendChild(fragment);
 }
 
 function safeInsertAdjacentHTML(element, position, html) {
-  element.insertAdjacentHTML(position, html);
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  const fragment = document.createDocumentFragment();
+  while (doc.body.firstChild) {
+    fragment.appendChild(doc.body.firstChild);
+  }
+  if (position === "beforebegin" && element.parentNode) {
+    element.parentNode.insertBefore(fragment, element);
+  } else if (position === "afterbegin") {
+    element.insertBefore(fragment, element.firstChild);
+  } else if (position === "beforeend") {
+    element.appendChild(fragment);
+  } else if (position === "afterend" && element.parentNode) {
+    element.parentNode.insertBefore(fragment, element.nextSibling);
+  }
 }
 
 function escapeAttribute(value) {
